@@ -12,7 +12,7 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  const extras=expenses===null?sum(c.expenses.map(x=>number(x.amount,x.name))):sum(expenses.map(x=>number(x.planned,x.name)));
  const p={B3:c.construction+c.land,B4:c.construction,B5:c.land,E3:extras,H3:c.principal,H4:c.fgts,H6:c.annualInterest,H8:c.cet,H9:c.trParameter,H10:c.term,H11:c.biennialFgts,H12:c.monthlyYear1,H13:c.monthlyYear2,K4:c.sale,K5:c.investments,K8:c.cdiParameter,K10:c.plr,K11:c.strategy};
  p.H5=p.B3-p.H3-p.H4;p.K3=p.H5+extras;p.K6=p.K4+p.K5-p.K3;p.B6=p.B4/c.area;p.B7=p.B3/c.area;p.H7=(1+p.H6)**(1/12)-1;p.K9=(1+p.K8*c.cdbShare*c.indicatorNetFactor)**(1/12)-1;
- const sac=[],cash=[];let debt=c.principal,reserve=p.K6;
+ const sac=[],cash=[],allocation=[];let debt=c.principal,reserve=p.K6;
  for(let i=0;i<c.dates.length;i++){
   const m=i+1,date=month(c.dates[i]),year=Number(date.slice(0,4)),mo=Number(date.slice(5,7));
   const annual=c.cdi.find(x=>x.year===year)?.annual;if(annual===undefined)throw Error('CDI não informado para '+year);
@@ -29,7 +29,17 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   for(const x of programs)if(!Number.isFinite(x.valor)||x.valor<0||!Number.isInteger(x.inicio)||!Number.isInteger(x.fim)||x.inicio<1||x.fim<x.inicio)throw Error('Programação de aporte inválida');
   const scheduled=programs.filter(x=>m>=x.inicio&&m<=x.fim);
   const debtPrograms=sum(scheduled.filter(x=>x.tipo==='amortizacao').map(x=>number(x.valor,'aporte')));
-  const extra=debt<=0?0:Math.min(c.trCapitalizes===false?debt+tr+interest+amortization:Math.max(0,correctedDebt-amortization),fgts+plrDebt+debtPrograms);
+  // Compare marginal savings: fixed DFI/admin do not fall with a partial amortization.
+  const financeRate=debt>0?((1+tr)*(1+p.H7)-1)+(1+tr)*previous(c.mipBands,m).rate:0;
+  const destination=debt>0&&net<=financeRate?'amortizacao':'investimento';
+  const autoAmount=sum(scheduled.filter(x=>x.tipo==='automatico'||x.tipo==='extra'&&c.autoExtras!==false).map(x=>x.valor));
+  const autoDebt=destination==='amortizacao'?autoAmount:0;
+  const availableDebt=Math.max(0,correctedDebt-amortization);
+  const baseDebt=Math.min(availableDebt,fgts+plrDebt+debtPrograms);
+  const appliedAutoDebt=Math.min(Math.max(0,availableDebt-baseDebt),autoDebt);
+  const autoCash=autoAmount-appliedAutoDebt;
+  allocation.push({month:date,investmentRate:net,financeRate,destination,extra:autoAmount,toDebt:appliedAutoDebt,toInvestment:autoCash});
+  const extra=debt<=0?0:Math.min(c.trCapitalizes===false?debt+tr+interest+amortization:Math.max(0,correctedDebt-amortization),fgts+plrDebt+debtPrograms+appliedAutoDebt);
   const installment=debt<=0?0:interest+amortization+mip+c.dfi+c.admin;
   const closing=debt<=0?0:Math.max(0,correctedDebt-amortization-extra);
   const age=c.ages[i];
@@ -38,12 +48,12 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   const earnings=reserve*net,plrCash=c.strategy==='CDB'&&mo===4?c.plr*c.plrCashFactor:0;
   const baseSalary=date<c.salaryStart?0:date<=c.salaryStep?c.salaryFirst:c.salaryLater;
   const salary=Math.min(baseSalary,Math.max(0,c.reserveTarget-(reserve+earnings+plrCash-installment)));
-  const salProgram=sum(scheduled.filter(x=>x.tipo==='salario').map(x=>number(x.valor,'salário'))),extraProgram=sum(scheduled.filter(x=>x.tipo==='extra').map(x=>number(x.valor,'aporte extra')));
+  const salProgram=sum(scheduled.filter(x=>x.tipo==='salario').map(x=>number(x.valor,'salário'))),extraProgram=sum(scheduled.filter(x=>x.tipo==='extra'&&c.autoExtras===false).map(x=>number(x.valor,'aporte extra')));
   const manual=movements.filter(x=>month(x.competencia)===date),manualIn=sum(manual.map(x=>Number(x.entrada)||0)),manualOut=sum(manual.map(x=>Number(x.saida)||0));
   // Explicit salary programs replace the automatic capped salary only in their range.
   const appliedSalary=scheduled.some(x=>x.tipo==='salario')?salProgram:salary;
-  const finalReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+manualIn-installment-manualOut;
-  cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram,H:installment,I:finalReserve,J:factor,manualIn,manualOut});
+  const finalReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+autoCash+manualIn-installment-manualOut;
+  cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram+autoCash,H:installment,I:finalReserve,J:factor,manualIn,manualOut});
   debt=closing;reserve=finalReserve;
  }
  const paidIndex=sac.findIndex(x=>x.M===0),paidMonths=paidIndex<0?null:paidIndex+1;
@@ -60,7 +70,7 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  const helperCash={};c.cdi.forEach((x,i)=>helperCash['N'+(i+2)]=(1+x.annual*c.cdbShare)**(1/12)-1);[.225,.2,.175,.15].forEach((v,i)=>helperCash['R'+(i+2)]=1-v);
  [4,5,6,7,8,9,10,11,12].forEach((r,i)=>p['E'+r]=expenses===null?c.expenses[i].amount:(expenses.find(x=>x.id===c.expenses[i].id||x.name===c.expenses[i].name)?.planned??0));
  const helperSchedule={B5:scheduleTotals.construction,B6:scheduleTotals.caixa,B7:scheduleTotals.fgts,B8:scheduleTotals.own,E5:physical,E6:paid,E7:scheduleTotals.construction-paid,E8:scheduleTotals.gap};
- return {parameters:p,premises:prem,sac,cash,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),'TR corrige o saldo antes de juros, amortização e MIP. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
+ return {parameters:p,premises:prem,sac,cash,allocation,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),'TR corrige o saldo antes de juros, amortização e MIP. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
 }
 root.MinhaObraEngine={calculate};if(typeof module!=='undefined')module.exports=root.MinhaObraEngine;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -67,3 +67,16 @@ A taxa TR continua derivada de TBF e das faixas a/b da planilha; não foi substi
 A planilha atualizada tem FGTS de R$77.000, indicador de quitação em junho, coluna K corrigida e cronograma com diferença de fontes zero. Sua fórmula de saldo ainda não incorpora TR. Por isso a importação confere o cenário original em modo de referência e o app aplica a correção autorizada após a conferência. O modo de referência não é usado nos cenários exibidos.
 
 Validação: 9.697 valores e 8.385 fórmulas da referência atualizada, sem divergências acima de R$0,01. Cálculo independente em Python: 4.130 valores mensais em 413 meses, diferença máxima zero, no cenário sem lançamentos adicionais. O cenário corrigido manteve quitação em junho de 2044. Testes de aportes, despesas e edição cobrem cenários sintéticos. Valores salvos da planilha não equivalem a recálculo ao vivo no Excel; integração real com OneDrive não foi exercitada nesta validação.
+
+
+## Gráficos e destino automático de extras
+
+Os gráficos exibem meses no eixo horizontal e valores ao passar o mouse, tocar ou selecionar o mês na barra acessível por teclado. O gráfico de taxas usa percentuais mensais comparáveis.
+
+A regra automática compara rendimento líquido mensal do CDB (curva CDI, percentual do CDI e fator IR da origem) com (1 + TR) × (1 + juros mensais) − 1 + (1 + TR) × taxa MIP. Em empate, amortiza. DFI e administração fixos não são considerados economia marginal de uma amortização parcial; FGHAB continua fora da parcela. Após quitação, extras vão ao investimento. Aportes extras existentes passam a seguir a regra automática; salário, amortizações explícitas, PLR e FGTS preservam suas regras. Extras externos não são retirados uma segunda vez da reserva. O excedente à dívida é investido.
+
+Esta é uma regra mensal estimada, não otimização global nem execução bancária. A tributação continua usando os fatores simplificados da planilha e não a idade fiscal de cada novo aporte; liquidez, risco de investimento e condições reais de amortização não são modelados. O gráfico recalcula com os parâmetros do usuário e não garante retorno futuro.
+
+Referências: [CAIXA — saldo atualizado e amortização](https://www.caixa.gov.br/voce/habitacao/financiamento/perguntas-frequentes/Paginas/default.aspx), [Banco Central — composição do CET](https://www.bcb.gov.br/meubc/faqs/s/emprestimos-e-financiamentos). O CET global não é somado aos juros/TR, evitando dupla contagem; a decisão usa os custos marginais modelados.
+
+Validação: 12 testes passaram, incluindo alternância com CDI, limite da dívida, excedente investido, ausência de duplicação dos aportes e interação dos dois gráficos com mouse e seleção de mês. Referência sem extras segue conferida em 9.697 valores.
