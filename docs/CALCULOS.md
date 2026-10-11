@@ -80,3 +80,16 @@ Esta é uma regra mensal estimada, não otimização global nem execução banc�
 Referências: [CAIXA — saldo atualizado e amortização](https://www.caixa.gov.br/voce/habitacao/financiamento/perguntas-frequentes/Paginas/default.aspx), [Banco Central — composição do CET](https://www.bcb.gov.br/meubc/faqs/s/emprestimos-e-financiamentos). O CET global não é somado aos juros/TR, evitando dupla contagem; a decisão usa os custos marginais modelados.
 
 Validação: 12 testes passaram, incluindo alternância com CDI, limite da dívida, excedente investido, ausência de duplicação dos aportes e interação dos dois gráficos com mouse e seleção de mês. Referência sem extras segue conferida em 9.697 valores.
+
+
+## Fase de construção estimada — 12 meses
+
+Padrão editável de 12 meses. A curva de liberações usa os valores Caixa do cronograma, agrupados nos meses de projeção e normalizados para totalizar R$339.000. Datas anteriores entram no primeiro mês; posteriores ao prazo entram no último. Ausência de valores usa distribuição uniforme. Isso é uma hipótese de simulação, não liberação confirmada. Toda liberação é considerada no início do mês; não há cálculo diário.
+
+Na obra: saldo anterior + liberação; juros sobre saldo atualizado; TR paga nos encargos, sem capitalização duplicada; MIP proporcional ao saldo liberado como aproximação, DFI/admin da planilha; amortização regular zero. FGHAB permanece fora da parcela. Tarifas de vistorias adicionais não são inventadas. Após obra: SAC com saldo corrigido pela TR. O prazo informado é tratado como total, incluindo a obra, até conferência contratual.
+
+Extras e amortizações programadas ficam no investimento durante construção por falta de confirmação da elegibilidade de amortização antecipada. PLR destinada a Finan é investida se vencer durante obra; não é lançada novamente na dívida. FGTS bienal mantém seu calendário, fora da obra. A regra de liquidez na obra não declara superioridade financeira do investimento.
+
+Fonte: [Cartilha CAIXA Habitação PF](https://www.caixa.gov.br/Downloads/habitacao-documentos-gerais/cartilha-habitacao-PF-construcao-conclusao-reforma-ampliacao-de-unidades-habitacionais.pdf). Valores reais dependem do contrato, seguros, datas, liberações e conclusão/legalização. R$1.500 não é parcela fixa oficial.
+
+13 testes passaram; a referência original continua conferida em 9.697 valores no modo sem fase de obra. A nova projeção é uma aproximação separada da planilha original.
