@@ -124,3 +124,9 @@ Por solicitação do proprietário: Financiamento = parcelas + FGTS efetivamente
 ## Balanço anual por fontes e destinos
 
 Substitui a tabela anual de despesas por tipo. Fontes: rendimentos líquidos do investimento, salário, PLR, FGTS aplicado na construção e amortização, outros aportes/entradas manuais e liberações previstas Caixa. Destinos: parcelas e amortizações pagas ao banco, pagamentos da construtora e outras despesas próprias/saídas manuais. Saldo líquido = total das fontes − total dos destinos. Não é patrimônio nem saldo final CDB. Capital inicial fica fora das receitas anuais; déficits podem representar seu consumo. Liberações consideradas no modelo são previsões. A PLR aplicada na dívida é fonte PLR e destino Caixa, sem repetição como outro aporte. Testes conferem somas e os R$339.000 das liberações.
+
+## Organização e conciliação da posição anual
+
+Os três gráficos precedem as tabelas. A posição anual reúne fontes identificadas, movimentações e saldo do investimento, parcelas e amortizações Caixa, saldo devedor e pagamentos à construtora e outras despesas. Salário e PLR não são novamente somados às despesas; FGTS integra as amortizações. Os gráficos de despesas usam parcelas + amortizações Caixa, construtora e outras despesas efetivas previstas. O total representa desembolsos brutos, incluindo pagamentos do crédito e da obra, e não custo líquido do imóvel.
+
+A visibilidade do botão Microsoft é atualizada assim que a sessão é reconhecida, independentemente de nova renderização. Testes de navegador cobrem sessão simulada, ordem dos gráficos, ausência de Balanço, conciliação anual e atualização das despesas. Não substituem autenticação real com a Microsoft.
