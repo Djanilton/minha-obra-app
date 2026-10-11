@@ -103,3 +103,14 @@ Agrupamento por ano calendário. Pago ao financiamento = soma das parcelas L e a
 ## Atualização imediata de valores
 
 As edições inline de despesas previstas e pagas atualizam os cartões consolidados e os totais da tabela sem reconstruir o campo. Parâmetros e curva CDI válidos recalculam indicadores, etapas, gráficos e tabela anual ao digitar ou selecionar, sem depender do botão Aplicar. Campos incompletos ou inválidos não substituem o último cenário válido. Registros novos, pagamentos da construtora, materiais, programações e exclusões seguem o fluxo de salvar/excluir, com renderização e recálculo via persist. Recebimento de dados remotos preserva formulários e atualiza os totais/indicadores calculados. O teste de navegador cobre os totais pagos e previstos durante edição, FGTS sem botão Aplicar, preservação do campo e edição durante sincronização.
+
+
+## Despesas por tipo e compras após obra
+
+Gráfico mensal: financiamento (L+K), pagamentos brutos à construtora do cronograma e recursos próprios. Tabela anual soma as mesmas três séries; o total anual também integra a posição anual. A terceira linha no gráfico de dívida e reserva é a despesa total do mês, não acumulada. Gráficos aceitam três séries e mostram todos os valores na seleção do mês.
+
+Móveis, eletros e itens associados identificados pelo nome têm o restante ainda não pago dividido em oito parcelas sem juros presumidos, a partir do primeiro mês depois da construção estimada. Centavos são ajustados na última parcela. Somente esse restante é removido da provisão inicial e debitado nas oito datas; gastos pagos não são parcelados de novo. Outros recursos próprios continuam provisionados no primeiro mês, conforme o modelo original. Portões e energia solar não são parcelados automaticamente por essa regra.
+
+Construtora e financiamento mostram pagamentos brutos de todas as fontes. Somá-los não mede custo líquido do imóvel: inclui a aplicação do crédito na obra e sua posterior devolução. Esses totais são informativos e não são debitados outra vez na reserva. Movimentos manuais repetindo parcelas exigem conciliação pelo usuário.
+
+14 testes passaram, incluindo oito parcelas, limites do período, soma por tipo, identidade da reserva sem débito duplo, terceira linha e coluna anual. Referência original sem essas alterações permanece conferida em 9.697 valores.
