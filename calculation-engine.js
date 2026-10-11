@@ -59,6 +59,9 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   const manual=movements.filter(x=>month(x.competencia)===date),manualIn=sum(manual.map(x=>Number(x.entrada)||0)),manualOut=sum(manual.map(x=>Number(x.saida)||0));
   // Explicit salary programs replace the automatic capped salary only in their range.
   const appliedSalary=scheduled.some(x=>x.tipo==='salario')?salProgram:salary;
+  const distribution=allocation[i];
+  distribution.totalToDebt=extra;distribution.totalToInvestment=appliedSalary+plrCash+extraProgram+autoCash;distribution.contributionTotal=distribution.totalToDebt+distribution.totalToInvestment;
+  distribution.sources=[...(appliedSalary>0?['Salário']:[]),...(fgts>0?['FGTS']:[]),...(plrDebt>0||plrCash>0?['PLR']:[]),...(autoAmount>0||extraProgram>0?['Extra programado']:[]),...(requestedDebtPrograms>0?['Amortização programada']:[])];
   const finalReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+autoCash+manualIn-installment-manualOut;
   cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram+autoCash,H:installment,I:finalReserve,J:factor,manualIn,manualOut});
   debt=closing;reserve=finalReserve;
