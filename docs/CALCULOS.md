@@ -133,3 +133,10 @@ A visibilidade do botão Microsoft é atualizada assim que a sessão é reconhec
 
 ### Curva CDI
 Percentuais editáveis são exibidos com até seis casas decimais, removendo ruído de ponto flutuante. Aplicar curva preserva o formulário aberto e registra a revisão antes da sincronização. Teste de navegador verifica os dois primeiros anos, os valores gravados e a permanência do formulário aberto.
+
+## Obrigações e documentos
+Obrigações são combinadas individualmente por ID ou título e data da alteração, com exclusões preservadas. Em registros antigos sem data individual, conclusão prevalece no empate para recuperar marcações locais. A nuvem consultada em 11/10/2026 continha somente pendentes; conclusões não enviadas dependem do armazenamento existente no celular. O resumo e links contratuais permanecem em arquivo privado no OneDrive, carregado pela aba de obrigações. Documentos cadastrados permanecem editáveis nesta aba; a aba Documentos foi retirada.
+
+Os controles de importação e conferência ficam somente em Configurações. Importar/ler valida as cinco abas financeiras mapeadas; exportar arquivo completo copia todas as abas e fórmulas da origem, sem gravar o cenário calculado sobre os originais. Exportar conferência fornece os resultados e limitações em JSON.
+
+Testes de navegador verificam combinação de duas alterações de obrigações, controles somente em Configurações, presença dos documentos na aba de obrigações, ordem dos gráficos e atualização das despesas. Autenticação e uso simultâneo real no celular não foram reproduzidos.
