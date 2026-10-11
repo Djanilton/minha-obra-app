@@ -130,3 +130,6 @@ Substitui a tabela anual de despesas por tipo. Fontes: rendimentos líquidos do 
 Os três gráficos precedem as tabelas. A posição anual reúne fontes identificadas, movimentações e saldo do investimento, parcelas e amortizações Caixa, saldo devedor e pagamentos à construtora e outras despesas. Salário e PLR não são novamente somados às despesas; FGTS integra as amortizações. Os gráficos de despesas usam parcelas + amortizações Caixa, construtora e outras despesas efetivas previstas. O total representa desembolsos brutos, incluindo pagamentos do crédito e da obra, e não custo líquido do imóvel.
 
 A visibilidade do botão Microsoft é atualizada assim que a sessão é reconhecida, independentemente de nova renderização. Testes de navegador cobrem sessão simulada, ordem dos gráficos, ausência de Balanço, conciliação anual e atualização das despesas. Não substituem autenticação real com a Microsoft.
+
+### Curva CDI
+Percentuais editáveis são exibidos com até seis casas decimais, removendo ruído de ponto flutuante. Aplicar curva preserva o formulário aberto e registra a revisão antes da sincronização. Teste de navegador verifica os dois primeiros anos, os valores gravados e a permanência do formulário aberto.
