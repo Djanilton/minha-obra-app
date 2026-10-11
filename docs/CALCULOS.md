@@ -148,3 +148,8 @@ Documentos podem receber URL existente ou arquivo selecionado pelo sistema. O en
 
 ## Cenário editável
 O principal do financiamento passa a ser editável por solicitação do proprietário; deve ser positivo e finito. R$339.000 permanece como valor importado da referência, sem restringir cenários posteriores. Liberações estimadas recalculam proporcionalmente ao principal. Resumo mostra valores iniciais de financiamento, FGTS, investimentos atuais, venda disponível e reserva após provisões. Projeções apresentam somente a posição inicial pertinente; avisos completos permanecem na conferência em Premissas. Teste de navegador altera principal para R$350.000, confirma recálculo e retorna à referência.
+
+## Organização dos quadros e etapas editáveis
+Configurações aceita o identificador ajustes usado pelo botão real, além de settings. A conferência e avisos são anexados nesse caminho. Informações Gerais reúne valores iniciais e indicadores, removendo quitação e reserva inicial repetidas; primeira coluna Rúbrica. Premissas usa ícone de anotação. Observações e fontes aparecem somente no final de Obrigações.
+
+Etapa, percentual, valor, divisão, mês proposto e serviços permitem edição na tabela. Nome, percentual e valor alteram o cadastro do cenário; divisão/mês/serviços são textos de referência. Não redistribuem automaticamente o cronograma mensal detalhado nem lançamentos pagos. Dados gravados e campos reconectados após recálculo. Teste de navegador verifica acesso real a Configurações e edição de serviços depois de alterar CDI.
