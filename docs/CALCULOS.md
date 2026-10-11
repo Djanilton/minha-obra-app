@@ -98,3 +98,8 @@ Fonte: [Cartilha CAIXA Habitação PF](https://www.caixa.gov.br/Downloads/habita
 ## Posição anual
 
 Agrupamento por ano calendário. Pago ao financiamento = soma das parcelas L e amortizações extras K; inclui encargos da obra. Valor investido = soma dos aportes efetivamente destinados à reserva, sem rendimentos nem reserva inicial. Entradas/saídas manuais são colunas separadas. Saldos devedor e de investimento são os saldos finais do último mês projetado de cada ano, incluindo anos parciais identificados pela data. O gráfico compara esses saldos finais e permite selecionar cada posição anual. Teste de navegador confirma gráfico, número de anos e datas do primeiro e último fechamento.
+
+
+## Atualização imediata de valores
+
+As edições inline de despesas previstas e pagas atualizam os cartões consolidados e os totais da tabela sem reconstruir o campo. Parâmetros e curva CDI válidos recalculam indicadores, etapas, gráficos e tabela anual ao digitar ou selecionar, sem depender do botão Aplicar. Campos incompletos ou inválidos não substituem o último cenário válido. Registros novos, pagamentos da construtora, materiais, programações e exclusões seguem o fluxo de salvar/excluir, com renderização e recálculo via persist. Recebimento de dados remotos preserva formulários e atualiza os totais/indicadores calculados. O teste de navegador cobre os totais pagos e previstos durante edição, FGTS sem botão Aplicar, preservação do campo e edição durante sincronização.
