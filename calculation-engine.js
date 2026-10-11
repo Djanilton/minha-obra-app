@@ -20,19 +20,20 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   const factor=number(c.irFactors[i],'IR mês '+m),gross=(1+annual*c.cdbShare)**(1/12)-1,net=gross*factor;
   let tr=0;if(i>0){const tbf=gross/c.cdbShare*c.tbfFactor,band=previous(c.trBands,tbf);tr=Math.max(0,(1+tbf)/(band.a+band.b*tbf)-1)}
   if(i>0)debt=Math.round(debt)<=0?0:debt;
-  const interest=debt<=0?0:debt*(1+tr)*p.H7,amortization=debt<=0?0:debt/(c.term-m+1);
+  const correctedDebt=debt*(c.trCapitalizes===false?1:1+tr);
+  const interest=debt<=0?0:debt*(1+tr)*p.H7,amortization=debt<=0?0:correctedDebt/(c.term-m+1);
   if(!Number.isFinite(amortization)||amortization<0)throw Error('Saldo remanescente após o prazo');
-  const mip=debt<=0?0:debt*previous(c.mipBands,m).rate,insurance=i===0?c.insurance:debt<=0?0:debt*c.insurance/c.principal;
+  const mip=debt<=0?0:correctedDebt*previous(c.mipBands,m).rate,insurance=i===0?c.insurance:debt<=0?0:correctedDebt*c.insurance/c.principal;
   const fgts=debt>0&&m%24===0?c.biennialFgts*(1+sum([...sac.slice(Math.max(0,i-11)).map(x=>x.D),tr])):0;
   const plrDebt=debt>0&&c.strategy==='Finan'&&m%12===0?c.plr:0;
   for(const x of programs)if(!Number.isFinite(x.valor)||x.valor<0||!Number.isInteger(x.inicio)||!Number.isInteger(x.fim)||x.inicio<1||x.fim<x.inicio)throw Error('Programação de aporte inválida');
   const scheduled=programs.filter(x=>m>=x.inicio&&m<=x.fim);
   const debtPrograms=sum(scheduled.filter(x=>x.tipo==='amortizacao').map(x=>number(x.valor,'aporte')));
-  const extra=debt<=0?0:Math.min(debt+tr+interest+amortization,fgts+plrDebt+debtPrograms);
+  const extra=debt<=0?0:Math.min(c.trCapitalizes===false?debt+tr+interest+amortization:Math.max(0,correctedDebt-amortization),fgts+plrDebt+debtPrograms);
   const installment=debt<=0?0:interest+amortization+mip+c.dfi+c.admin;
-  const closing=debt<=0?0:Math.max(0,debt-amortization-extra);
+  const closing=debt<=0?0:Math.max(0,correctedDebt-amortization-extra);
   const age=c.ages[i];
-  const s={A:date,B:m,C:debt,D:tr,E:interest,F:amortization,G:mip,H:c.dfi,I:c.admin,J:insurance,K:extra,L:installment,M:closing,N:closing===0?'Sim':'Não',O:age};
+  const s={A:date,B:m,C:debt,D:tr,E:interest,F:amortization,G:mip,H:c.dfi,I:c.admin,J:insurance,K:extra,L:installment,M:closing,N:closing===0?'Sim':'Não',O:age,correction:correctedDebt-debt,correctedDebt};
   sac.push(s);
   const earnings=reserve*net,plrCash=c.strategy==='CDB'&&mo===4?c.plr*c.plrCashFactor:0;
   const baseSalary=date<c.salaryStart?0:date<=c.salaryStep?c.salaryFirst:c.salaryLater;
@@ -49,7 +50,7 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  const minReserve=Math.min(...cash.map(x=>x.I)),interestTotal=sum(sac.map(x=>x.E)),totalPaid=sum(sac.map(x=>x.K+x.L));
  p.N6=paidMonths;p.N7=paidMonths===null?null:paidMonths/12;p.N8=minReserve;p.N4=cash.find(x=>x.I===minReserve)?.A;p.P5=cash.find(x=>x.I<0)?.A||'';
  // Legacy N3 is one row early; preserve separately for reconciliation.
- p.N3=paidIndex>0?sac[paidIndex-1].A:null;p.N5=paidIndex>0?sac[paidIndex-1].O:null;p.N9=paidIndex<0?null:cash[paidIndex].I;p.N10=interestTotal;p.N11=totalPaid;p.H14=totalPaid-c.principal;p.K7=p.K3+totalPaid;
+ p.N3=paidIndex<0?null:sac[c.trCapitalizes===false&&c.legacyPayoffIndex?Math.max(0,paidIndex-1):paidIndex].A;p.N5=paidIndex>0?sac[paidIndex-1].O:null;p.N9=paidIndex<0?null:cash[paidIndex].I;p.N10=interestTotal;p.N11=totalPaid;p.H14=totalPaid-c.principal;p.K7=p.K3+totalPaid;
  p.N12=totalPaid===0?null:1-c.principal/totalPaid;p.N13=paidMonths===null?null:-interestTotal-500*paidMonths+p.N9;p.N14=(1+p.H7)**12-1;p.N15=(1+p.K9)**12-1;p.N16=p.N15>p.N14?'Investir':'Amortizar';p.N17=p.N9===null?null:p.N9<20000?100000:0;p.N18=paidMonths===null?null:-interestTotal-300*paidMonths+p.N9*.8-p.N17;
  let physical=0,paid=0;const schedule=c.schedule.map(x=>{physical+=x.physical;paid+=x.payment;return {...x,physicalTotal:physical,paymentTotal:paid,sourceGap:x.payment-x.caixa-x.fgts-x.own}});
  const scheduleTotals={construction:sum(schedule.map(x=>x.payment)),caixa:sum(schedule.map(x=>x.caixa)),fgts:sum(schedule.map(x=>x.fgts)),own:sum(schedule.map(x=>x.own))};scheduleTotals.gap=scheduleTotals.construction-scheduleTotals.caixa-scheduleTotals.fgts-scheduleTotals.own;
@@ -59,7 +60,7 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  const helperCash={};c.cdi.forEach((x,i)=>helperCash['N'+(i+2)]=(1+x.annual*c.cdbShare)**(1/12)-1);[.225,.2,.175,.15].forEach((v,i)=>helperCash['R'+(i+2)]=1-v);
  [4,5,6,7,8,9,10,11,12].forEach((r,i)=>p['E'+r]=expenses===null?c.expenses[i].amount:(expenses.find(x=>x.id===c.expenses[i].id||x.name===c.expenses[i].name)?.planned??0));
  const helperSchedule={B5:scheduleTotals.construction,B6:scheduleTotals.caixa,B7:scheduleTotals.fgts,B8:scheduleTotals.own,E5:physical,E6:paid,E7:scheduleTotals.construction-paid,E8:scheduleTotals.gap};
- return {parameters:p,premises:prem,sac,cash,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),'TR afeta juros, mas não corrige o saldo nesta planilha. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
+ return {parameters:p,premises:prem,sac,cash,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),'TR corrige o saldo antes de juros, amortização e MIP. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
 }
 root.MinhaObraEngine={calculate};if(typeof module!=='undefined')module.exports=root.MinhaObraEngine;
 })(typeof globalThis!=='undefined'?globalThis:this);

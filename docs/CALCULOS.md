@@ -32,14 +32,14 @@ Salários programados substituem o aporte automático nos períodos informados; 
 
 A entrada de valores é gravada localmente a cada número válido. A atualização remota preserva formulários e a posição de edição. Uma alteração feita durante um envio continua pendente para o próximo envio. Metadados de parâmetros/despesas usam a data da alteração; edições simultâneas do mesmo conjunto em aparelhos diferentes ainda usam a versão mais recente, sem fusão por campo.
 
-## Divergências da origem mantidas visíveis
+## Histórico da primeira referência (substituído pelas correções abaixo)
 
 - FGTS difere entre as abas. A referência usa o valor de cada aba para conferir; o cenário integrado usa R$77.000, conforme confirmação do proprietário. Principal fica em R$339.000.
 - O cronograma contém diferença entre fontes e pagamentos. Valores literais da origem não são redistribuídos sem decisão do proprietário. Mudanças do contrato/FGTS que não coincidam com o cronograma geram aviso.
 - Dez fórmulas iniciais de aporte FGTS contêm #REF! em um ramo inativo. O ramo não é usado nesses meses. A regra explícita remove essa dependência no aplicativo; a planilha não é editada.
 - O indicador legado de mês de quitação aponta a linha anterior. O aplicativo mostra a data em que o saldo efetivamente zera e preserva o índice legado para conferência.
 - N4 é a data do menor saldo, apesar do rótulo de saldo negativo. P5 identifica o primeiro saldo negativo.
-- TR altera os juros, mas não é capitalizada no saldo da origem. J (seguros/FGHAB) não entra na parcela L. Essas convenções são preservadas para equivalência e não confirmam a cobrança bancária.
+- TR altera os juros, mas não é capitalizada no saldo da origem. J (seguros/FGHAB) não entra na parcela L. Essas convenções eram preservadas na primeira versão para equivalência e não confirmam a cobrança bancária.
 - H9, H12 e H13 não são usados nas fórmulas mensais da origem. CET é informativo; os juros mensais derivam da taxa anual. CDI e IR são cenários simplificados; não apuram imposto por lote.
 - Despesas próprias são provisionadas no início, conforme K3/K6, em vez de debitadas novamente a cada pagamento. Movimentos manuais que repitam despesas podem duplicar saídas; não há conciliação bancária automática.
 
@@ -56,3 +56,14 @@ Autenticação Microsoft, download real e escrita real no OneDrive não foram ex
 Links e resumos particulares antes embutidos no HTML foram retirados. A localização do arquivo é resolvida na conta Microsoft e fica somente no JSON privado. Uma cópia recuperável desses metadados foi entregue ao proprietário separadamente; pode ser importada em Configurações > Importar JSON, sem apagar os registros existentes. Os valores iniciais de despesas agora vêm da planilha, em vez de constantes particulares no HTML.
 
 Essa limpeza muda a versão atual. Não reescreve o histórico de commits antigos do repositório, que já era público.
+
+
+## Correção da TR — 11/10/2026
+
+O cenário do aplicativo incorpora a TR ao saldo mensal: saldo corrigido = saldo inicial × (1 + TR). Juros e amortização SAC são calculados sobre esse saldo; MIP e o seguro proporcional também usam o saldo corrigido. O saldo final é o saldo corrigido menos amortização e aportes, limitado a zero. Aportes são limitados ao saldo após a amortização. FGHAB continua fora da parcela. Principal preservado em R$339.000.
+
+A taxa TR continua derivada de TBF e das faixas a/b da planilha; não foi substituída por uma taxa arbitrária. O primeiro mês permanece com TR zero, conforme a origem.
+
+A planilha atualizada tem FGTS de R$77.000, indicador de quitação em junho, coluna K corrigida e cronograma com diferença de fontes zero. Sua fórmula de saldo ainda não incorpora TR. Por isso a importação confere o cenário original em modo de referência e o app aplica a correção autorizada após a conferência. O modo de referência não é usado nos cenários exibidos.
+
+Validação: 9.697 valores e 8.385 fórmulas da referência atualizada, sem divergências acima de R$0,01. Cálculo independente em Python: 4.130 valores mensais em 413 meses, diferença máxima zero, no cenário sem lançamentos adicionais. O cenário corrigido manteve quitação em junho de 2044. Testes de aportes, despesas e edição cobrem cenários sintéticos. Valores salvos da planilha não equivalem a recálculo ao vivo no Excel; integração real com OneDrive não foi exercitada nesta validação.
