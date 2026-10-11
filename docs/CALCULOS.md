@@ -140,3 +140,8 @@ Obrigações são combinadas individualmente por ID ou título e data da altera�
 Os controles de importação e conferência ficam somente em Configurações. Importar/ler valida as cinco abas financeiras mapeadas; exportar arquivo completo copia todas as abas e fórmulas da origem, sem gravar o cenário calculado sobre os originais. Exportar conferência fornece os resultados e limitações em JSON.
 
 Testes de navegador verificam combinação de duas alterações de obrigações, controles somente em Configurações, presença dos documentos na aba de obrigações, ordem dos gráficos e atualização das despesas. Autenticação e uso simultâneo real no celular não foram reproduzidos.
+
+## Formulários em pop-up
+Cadastros e edições de etapas, pagamentos, diferenças de materiais, pendências e documentos usam um diálogo fora da área reconstruída da página. Perda de foco e atualização remota não removem seu preenchimento. Nova despesa própria solicita descrição e valor previsto. Obrigações têm X vermelho para exclusão.
+
+Documentos podem receber URL existente ou arquivo selecionado pelo sistema. O envio ocorre somente ao salvar, na pasta privada do aplicativo no OneDrive; erro mantém o formulário aberto. O teste de navegador cobre abertura, perda de foco, atualização, salvamento da despesa, seleção de arquivo e manutenção dos quadros. Envio real à Microsoft não foi exercitado; requer sessão conectada.
