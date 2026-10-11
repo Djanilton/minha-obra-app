@@ -6,7 +6,7 @@ function number(v,name){if(typeof v!=='number'||!Number.isFinite(v))throw Error(
 function month(v){return String(v).slice(0,7)}
 function previous(table,key){const eligible=table.filter(x=>x.threshold<=key);if(!eligible.length)throw Error('Tabela sem faixa para '+key);return eligible.reduce((a,b)=>a.threshold>b.threshold?a:b)}
 function calculate(c,{expenses=null,programs=[],movements=[]}={}){
- if(c.principal!==339000)throw Error('O principal deve permanecer em R$339.000');
+ if(!Number.isFinite(c.principal)||c.principal<=0)throw Error('Informe um financiamento maior que zero');
  for(const k of ['construction','land','fgts','annualInterest','term','sale','investments','plr','biennialFgts','dfi','admin','insurance','area','reserveTarget'])number(c[k],k);
  if(c.term<1||!Number.isInteger(c.term)||c.annualInterest<=-1||c.area<=0)throw Error('Prazo, taxa ou área inválidos');
  const extras=expenses===null?sum(c.expenses.map(x=>number(x.amount,x.name))):sum(expenses.map(x=>number(x.planned,x.name)));
