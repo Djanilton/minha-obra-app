@@ -119,3 +119,8 @@ Construtora e financiamento mostram pagamentos brutos de todas as fontes. Somá-
 ## Grupos das movimentações consolidadas
 
 Por solicitação do proprietário: Financiamento = parcelas + FGTS efetivamente aplicado à dívida (limitado ao aporte total K); Recursos próprios = despesas próprias + salário + PLR + extras e amortizações de origem própria. Quando PLR ou um extra abate dívida, ele entra em próprios e não novamente em financiamento. Construtora mantém os pagamentos previstos do cronograma. O total é movimentação bruta, incluindo transferências para investimento/dívida; não é somente gasto consumido. A projeção do saldo da reserva não muda por essa reclassificação. A tabela posição anual mantém sua coluna de pagamentos totais feitos ao banco, independentemente de fonte, e o total consolidado acompanha estes novos grupos. Teste de grupos cobre salário, PLR destinada à dívida, FGTS e soma mensal sem dupla classificação.
+
+
+## Balanço anual por fontes e destinos
+
+Substitui a tabela anual de despesas por tipo. Fontes: rendimentos líquidos do investimento, salário, PLR, FGTS aplicado na construção e amortização, outros aportes/entradas manuais e liberações previstas Caixa. Destinos: parcelas e amortizações pagas ao banco, pagamentos da construtora e outras despesas próprias/saídas manuais. Saldo líquido = total das fontes − total dos destinos. Não é patrimônio nem saldo final CDB. Capital inicial fica fora das receitas anuais; déficits podem representar seu consumo. Liberações consideradas no modelo são previsões. A PLR aplicada na dívida é fonte PLR e destino Caixa, sem repetição como outro aporte. Testes conferem somas e os R$339.000 das liberações.
