@@ -69,7 +69,10 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   const furnitureMonth=i-constructionMonths;const deferredPayment=furnitureMonth>=0&&furnitureMonth<8?(furnitureMonth===7?deferred-Math.round(deferred/8*100)/100*7:Math.round(deferred/8*100)/100):0;
   const contractorPayment=sum(c.schedule.filter(x=>month(x.month)===date).map(x=>x.payment));
   const ownPayment=(i===0?extras-deferred:0)+deferredPayment;
-  expenseTimeline.push({month:date,financing:installment+extra,contractor:contractorPayment,own:ownPayment,total:installment+extra+contractorPayment+ownPayment,furniture:deferredPayment});
+  const appliedFgts=Math.min(fgts,extra);
+  const ownContributions=appliedSalary+plrCash+extraProgram+autoCash+Math.max(0,extra-appliedFgts);
+  const financingFlow=installment+appliedFgts,ownFlow=ownPayment+ownContributions;
+  expenseTimeline.push({month:date,financing:financingFlow,contractor:contractorPayment,own:ownFlow,total:financingFlow+contractorPayment+ownFlow,furniture:deferredPayment,salary:appliedSalary,plr:plrCash+Math.min(plrDebt,Math.max(0,extra-appliedFgts)),fgts:appliedFgts,ownExpenses:ownPayment,ownContributions});
   const finalReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+autoCash+manualIn-installment-manualOut-deferredPayment;
   cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram+autoCash,H:installment,I:finalReserve,J:factor,manualIn,manualOut,deferredPayment});
   debt=closing;reserve=finalReserve;

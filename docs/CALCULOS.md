@@ -114,3 +114,8 @@ Móveis, eletros e itens associados identificados pelo nome têm o restante aind
 Construtora e financiamento mostram pagamentos brutos de todas as fontes. Somá-los não mede custo líquido do imóvel: inclui a aplicação do crédito na obra e sua posterior devolução. Esses totais são informativos e não são debitados outra vez na reserva. Movimentos manuais repetindo parcelas exigem conciliação pelo usuário.
 
 14 testes passaram, incluindo oito parcelas, limites do período, soma por tipo, identidade da reserva sem débito duplo, terceira linha e coluna anual. Referência original sem essas alterações permanece conferida em 9.697 valores.
+
+
+## Grupos das movimentações consolidadas
+
+Por solicitação do proprietário: Financiamento = parcelas + FGTS efetivamente aplicado à dívida (limitado ao aporte total K); Recursos próprios = despesas próprias + salário + PLR + extras e amortizações de origem própria. Quando PLR ou um extra abate dívida, ele entra em próprios e não novamente em financiamento. Construtora mantém os pagamentos previstos do cronograma. O total é movimentação bruta, incluindo transferências para investimento/dívida; não é somente gasto consumido. A projeção do saldo da reserva não muda por essa reclassificação. A tabela posição anual mantém sua coluna de pagamentos totais feitos ao banco, independentemente de fonte, e o total consolidado acompanha estes novos grupos. Teste de grupos cobre salário, PLR destinada à dívida, FGTS e soma mensal sem dupla classificação.
