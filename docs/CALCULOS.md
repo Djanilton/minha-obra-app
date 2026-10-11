@@ -93,3 +93,8 @@ Extras e amortizações programadas ficam no investimento durante construção p
 Fonte: [Cartilha CAIXA Habitação PF](https://www.caixa.gov.br/Downloads/habitacao-documentos-gerais/cartilha-habitacao-PF-construcao-conclusao-reforma-ampliacao-de-unidades-habitacionais.pdf). Valores reais dependem do contrato, seguros, datas, liberações e conclusão/legalização. R$1.500 não é parcela fixa oficial.
 
 13 testes passaram; a referência original continua conferida em 9.697 valores no modo sem fase de obra. A nova projeção é uma aproximação separada da planilha original.
+
+
+## Posição anual
+
+Agrupamento por ano calendário. Pago ao financiamento = soma das parcelas L e amortizações extras K; inclui encargos da obra. Valor investido = soma dos aportes efetivamente destinados à reserva, sem rendimentos nem reserva inicial. Entradas/saídas manuais são colunas separadas. Saldos devedor e de investimento são os saldos finais do último mês projetado de cada ano, incluindo anos parciais identificados pela data. O gráfico compara esses saldos finais e permite selecionar cada posição anual. Teste de navegador confirma gráfico, número de anos e datas do primeiro e último fechamento.
