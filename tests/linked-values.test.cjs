@@ -12,12 +12,12 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://test.minha-obra/**',async route=>{
    const file=new URL(route.request().url()).pathname.slice(1)||'index.html';
-   if(!['index.html','calculation-engine.js','workbook-adapter.js','engine-ui.js'].includes(file))return route.fulfill({status:404,body:''});
+   if(!['index.html','calculation-engine.js','workbook-adapter.js','engine-ui.js','finance-bridge.js'].includes(file))return route.fulfill({status:404,body:''});
    await route.fulfill({body:await fs.readFile(path.join(__dirname,'..',file)),contentType:file.endsWith('.js')?'text/javascript':'text/html'});
   });
   await page.route(/https:\/\/(alcdn|cdn\.jsdelivr)/,r=>r.fulfill({body:'',contentType:'text/javascript'}));
   await page.goto('https://test.minha-obra/');
-  const c=fixture(),shares=[.24,.15,.15,.15,.1,.1,.11];
+  const c={...fixture(),investments:710000},shares=[.24,.15,.15,.15,.1,.1,.11];
   c.stages=shares.map((share,i)=>({name:(i+1)+'ª etapa',share,amount:600000*share,startMonth:'2020-01',endMonth:['2020-02','2020-04','2020-06','2020-08','2020-10','2020-12','2021-02'][i]}));
   c.firstStage=c.stages[0].amount;c.expenses[0].name='Móveis';c.premiseRows=Array.from({length:23},()=>Array.from({length:6},()=>({label:''})));
   c.schedule=c.stages.map((x,i)=>({name:x.name,month:x.endMonth,services:'Serviço '+i,physical:shares[i],payment:x.amount,caixa:339000*shares[i],fgts:77000*shares[i],own:184000*shares[i],condition:'Previsto'}));
@@ -36,12 +36,9 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   assert.equal(await end.getAttribute('data-identity'),'preserved');
   assert.equal(await page.locator('[data-stage="3"][data-column="4"]').inputValue(),'2020-08');
   await page.evaluate(()=>{tab='resumo';render()});
-  const reference=await page.evaluate(()=>MinhaObraEngine.referenceReserve(state.meta.engine.referenceConfig));
   const overview=await page.locator('#summaryOverview').innerText();
-  assert.ok(overview.includes('Reserva mínima — planilha'));
-  assert.ok(overview.includes(reference.parameters.N4));
-  assert.ok(overview.includes('Reserva mínima — cenário atual'));
-  assert.equal(await page.locator('#summaryReferenceReserve tbody tr').count(),c.dates.length);
+  assert.equal(await page.locator('#summaryReferenceReserve').count(),0);
+  assert.match(await page.locator('#summaryFunding').innerText(),/Reserva mínima projetada/);
   await page.locator('#summaryHouseExpenses > .sheet-scroll > table > tbody > tr').nth(1).locator('summary').first().click();
   await page.getByText('Etapas',{exact:true}).click();
   const stageRows=page.locator('#summaryHouseExpenses details details table tbody tr');
@@ -84,7 +81,7 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   await page.locator('#engineParams [name=fgts]').fill('80000');
   assert.ok(Math.abs(await page.evaluate(()=>engineResult().scheduleTotals.caixa)-350000)<.01);
   assert.ok(Math.abs(await page.evaluate(()=>engineResult().scheduleTotals.fgts)-80000)<.01);
-  await page.locator('summary').filter({hasText:'CDI anual e percentual líquido por mês'}).click();
+  assert.equal(await page.locator('#engineRates').evaluate(el=>el.closest('details').open),true);
   await page.locator('#engineRates [name=cdi2020]').fill('14.25');
   assert.equal(await page.evaluate(()=>engineResult().parameters.K8),.1425);
   const mutations=await page.evaluate(()=>{
