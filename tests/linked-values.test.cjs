@@ -23,7 +23,7 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   c.schedule=c.stages.map((x,i)=>({name:x.name,month:x.endMonth,services:'Serviço '+i,physical:shares[i],payment:x.amount,caixa:339000*shares[i],fgts:77000*shares[i],own:184000*shares[i],condition:'Previsto'}));
   const split={...c.schedule[1]};for(const key of ['payment','caixa','fgts','own','physical'])split[key]/=2;c.schedule.splice(1,1,{...split},{...split});
   await page.evaluate(c=>{
-   state.meta.engine={config:c,validation:{passed:true,checked:0,formulaCount:0}};
+   state.meta.engine={config:c,referenceConfig:structuredClone(c),validation:{passed:true,checked:0,formulaCount:0}};
    state.meta.landPaid=100000;
    state.items.etapas=c.stages.map((x,i)=>({id:'stage-'+i,nome:x.name,valor:1,mesInicio:'2025-01',mesFim:'2025-02'}));
    state.items.gastos=[{id:'paid',nome:'Construtora — 1ª etapa',categoria:'Construtora',valor:140000,valorPago:140000}];
@@ -36,6 +36,12 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   assert.equal(await end.getAttribute('data-identity'),'preserved');
   assert.equal(await page.locator('[data-stage="3"][data-column="4"]').inputValue(),'2020-08');
   await page.evaluate(()=>{tab='resumo';render()});
+  const reference=await page.evaluate(()=>MinhaObraEngine.referenceReserve(state.meta.engine.referenceConfig));
+  const overview=await page.locator('#summaryOverview').innerText();
+  assert.ok(overview.includes('Reserva mínima — planilha'));
+  assert.ok(overview.includes(reference.parameters.N4));
+  assert.ok(overview.includes('Reserva mínima — cenário atual'));
+  assert.equal(await page.locator('#summaryReferenceReserve tbody tr').count(),c.dates.length);
   await page.locator('#summaryHouseExpenses > .sheet-scroll > table > tbody > tr').nth(1).locator('summary').first().click();
   await page.getByText('Etapas',{exact:true}).click();
   const stageRows=page.locator('#summaryHouseExpenses details details table tbody tr');
