@@ -42,6 +42,9 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
   assert.match(await stageRows.nth(2).innerText(),/2020-05\s+2020-07/);
   assert.match(await stageRows.nth(3).innerText(),/2020-08/);
   const snapshot=await page.evaluate(()=>({v:consolidatedValues(),r:engineResult(),s:expenseSnapshot()}));
+  assert.equal(snapshot.v['Pago compra terreno'],100000);assert.equal(snapshot.v['Compra Terreno'],undefined);assert.equal(snapshot.v['Terreno pago'],undefined);
+  for(const row of snapshot.r.schedule){assert.ok(row.own>=0);assert.ok(row.fgts>=0);assert.ok(row.caixa>=0);assert.ok(Math.abs(row.payment-row.own-row.fgts-row.caixa)<.01)}
+  assert.match(await page.locator('#summaryFunding').innerText(),/Recursos próprios ainda necessários para a construtora/);
   assert.equal(snapshot.v['Previsão consolidada'],810500);
   assert.equal(snapshot.v['Pago consolidado'],240500);
   assert.ok(Math.abs(snapshot.r.scheduleTotals.construction-601500)<.01);
@@ -92,7 +95,7 @@ test('valores editáveis propagam para resumo, despesas, cronogramas e cálculo'
     state.meta.engine.config={...structuredClone(base),[key]:value};answers.push([key,read(engineResult()),value]);
    }
    state.meta.engine.config={...structuredClone(base),area:250};answers.push(['area',engineResult().parameters.B6,linkedEngineConfig().construction/250]);
-   state.meta.engine.config={...structuredClone(base),reserveTarget:1000000,salaryFirst:3000,salaryLater:4500};const salary=engineResult();answers.push(['salaryFirst',salary.cash[3].F,3000],['salaryLater',salary.cash[16].F,4500]);
+   state.meta.engine.config={...structuredClone(base),reserveTarget:1000000,salaryFirst:3000,salaryLater:4500};const salary=engineResult();answers.push(['salaryFirst: investimento suficiente',salary.cash[3].F,0],['salaryLater: investimento suficiente',salary.cash[16].F,0]);
    state.meta.engine.config={...structuredClone(base),cdbShare:1.15};answers.push(['cdbShare',engineResult().cash[0].D,((1+base.cdi[0].annual*1.15)**(1/12)-1)*base.irFactors[0]]);
    state.meta.engine.config={...structuredClone(base),indicatorNetFactor:.85};answers.push(['indicatorNetFactor',engineResult().parameters.K9,(1+base.cdi[0].annual*base.cdbShare*.85)**(1/12)-1]);
    state.meta.engine.config=base;return answers;

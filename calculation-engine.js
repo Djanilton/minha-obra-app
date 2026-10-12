@@ -5,6 +5,13 @@ const sum=a=>a.reduce((s,v)=>s+v,0);
 function number(v,name){if(typeof v!=='number'||!Number.isFinite(v))throw Error('Parâmetro inválido: '+name);return v}
 function month(v){return String(v).slice(0,7)}
 function previous(table,key){const eligible=table.filter(x=>x.threshold<=key);if(!eligible.length)throw Error('Tabela sem faixa para '+key);return eligible.reduce((a,b)=>a.threshold>b.threshold?a:b)}
+
+function allocateConstructorSources(schedule,{construction,principal,fgts}){
+ const cents=v=>Math.round(Number(v||0)*100),budget=cents(construction),credit=cents(principal),fund=cents(fgts);if(budget<0||credit<0||fund<0)throw Error('Fontes ou custo da construtora inválidos');
+ const rows=schedule.map(x=>({...x})).sort((a,b)=>String(a.month).localeCompare(String(b.month)));let adjustment=0;for(const x of rows){const value=cents(x.payment);if(value<0){adjustment-=value;x.payment=0;x.condition=(x.condition||'')+' · economia considerada no total'}else x.payment=value/100}for(let i=rows.length-1;i>=0&&adjustment>0;i--){const used=Math.min(cents(rows[i].payment),adjustment);rows[i].payment=(cents(rows[i].payment)-used)/100;adjustment-=used}const total=rows.reduce((a,x)=>a+cents(x.payment),0);if(adjustment||Math.abs(total-budget)>1)throw Error('Pagamentos do cronograma não fecham com o custo da construtora');
+ let own=Math.max(0,budget-credit-fund),fgtsLeft=fund,creditLeft=credit;const ownRequired=own/100;for(const x of rows){let amount=cents(x.payment);const usedOwn=Math.min(amount,own);own-=usedOwn;amount-=usedOwn;const usedFgts=Math.min(amount,fgtsLeft);fgtsLeft-=usedFgts;amount-=usedFgts;const usedCredit=Math.min(amount,creditLeft);creditLeft-=usedCredit;amount-=usedCredit;x.own=usedOwn/100;x.fgts=usedFgts/100;x.caixa=usedCredit/100;x.sourceGap=amount/100;if(amount)throw Error('Faltam fontes para pagar a construtora')}return {schedule:rows,ownRequired,fgtsUsed:(fund-fgtsLeft)/100,caixaUsed:(credit-creditLeft)/100,unusedFgts:fgtsLeft/100,unusedCredit:creditLeft/100}
+}
+
 function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  if(!Number.isFinite(c.principal)||c.principal<=0)throw Error('Informe um financiamento maior que zero');
  for(const k of ['construction','land','fgts','annualInterest','term','sale','investments','plr','biennialFgts','dfi','admin','insurance','area','reserveTarget'])number(c[k],k);
@@ -19,6 +26,9 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  const costRows=expenses===null?c.expenses.map(x=>({...x,planned:x.amount,paid:0})):expenses;
  const deferred=c.trCapitalizes===false?0:sum(costRows.filter(x=>/m[oó]veis|eletro|sof[aá]|espelho|box|videoporteiro|fechadura|mesa/i.test(x.name)).map(x=>Math.max(0,x.planned-(x.paid||0))));
  p.K6+=deferred;
+ const currentFunds=c.currentFunds===true;const ownConstructor=Math.max(0,c.construction-c.principal-c.fgts),constructorAlreadyPaid=Math.min(ownConstructor,Math.max(0,Number(c.paidContractorTotal??c.paidContractor??0))),ownConstructorRemaining=Math.max(0,ownConstructor-constructorAlreadyPaid),landRemaining=Math.max(0,c.land-Number(c.landPaid||0)),otherRemaining=sum(costRows.map(x=>Math.max(0,x.planned-Number(x.paid||0)))),otherUpfront=Math.max(0,otherRemaining-deferred),capital=c.sale+c.investments;
+ const funding={currentFunds,capital,ownConstructor,constructorAlreadyPaid,ownConstructorRemaining,landRemaining,otherRemaining,otherUpfront,deferred,afterConstructor:capital-ownConstructorRemaining,afterAll:capital-ownConstructorRemaining-landRemaining-otherRemaining,initialShortfall:0};
+ if(currentFunds){p.H5=ownConstructorRemaining+landRemaining;p.K3=ownConstructorRemaining+landRemaining+otherRemaining;const opening=capital-ownConstructorRemaining-landRemaining-otherUpfront;funding.initialShortfall=Math.max(0,-opening);p.K6=Math.max(0,opening)}funding.startingReserve=p.K6;
  const expenseTimeline=[];
  const sac=[],cash=[],allocation=[];let debt=constructionMonths?0:c.principal,reserve=p.K6;
  for(let i=0;i<c.dates.length;i++){
@@ -56,25 +66,28 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
   const age=c.ages[i];
   const s={A:date,B:m,C:debt,D:tr,E:interest,F:amortization,G:mip,H:c.dfi,I:c.admin,J:insurance,K:extra,L:installment,M:closing,N:!inConstruction&&closing===0?'Sim':'Não',O:age,phase:inConstruction?'Construção':'Amortização',release,correction:correctedDebt-debt,correctedDebt};
   sac.push(s);
-  const earnings=reserve*net,plrCash=c.strategy==='CDB'&&mo===4?c.plr*c.plrCashFactor:inConstruction&&c.strategy==='Finan'&&m%12===0?c.plr:0;
+  const earnings=(currentFunds?Math.max(0,reserve):reserve)*net,plrCash=c.strategy==='CDB'&&mo===4?c.plr*c.plrCashFactor:inConstruction&&c.strategy==='Finan'&&m%12===0?c.plr:0;
   const baseSalary=date<c.salaryStart?0:date<=c.salaryStep?c.salaryFirst:c.salaryLater;
-  const salary=Math.min(baseSalary,Math.max(0,c.reserveTarget-(reserve+earnings+plrCash-installment)));
   const salProgram=sum(scheduled.filter(x=>x.tipo==='salario').map(x=>number(x.valor,'salário'))),extraProgram=sum(scheduled.filter(x=>x.tipo==='extra'&&c.autoExtras===false).map(x=>number(x.valor,'aporte extra')));
   const manual=movements.filter(x=>month(x.competencia)===date),manualIn=sum(manual.map(x=>Number(x.entrada)||0)),manualOut=sum(manual.map(x=>Number(x.saida)||0));
+  const furnitureMonth=i-constructionMonths;const deferredPayment=furnitureMonth>=0&&furnitureMonth<8?(furnitureMonth===7?deferred-Math.round(deferred/8*100)/100*7:Math.round(deferred/8*100)/100):0;
+  const availableInvestment=Math.max(0,reserve)+earnings+plrCash+extraProgram+autoCash+manualIn;
+  const salaryNeed=currentFunds?Math.max(0,installment+deferredPayment+manualOut-availableInvestment):Math.max(0,c.reserveTarget-(reserve+earnings+plrCash-installment));
+  const salary=Math.min(baseSalary,salaryNeed);
   // Explicit salary programs replace the automatic capped salary only in their range.
   const appliedSalary=scheduled.some(x=>x.tipo==='salario')?salProgram:salary;
   const distribution=allocation[i];
   distribution.totalToDebt=extra;distribution.totalToInvestment=appliedSalary+plrCash+extraProgram+autoCash;distribution.contributionTotal=distribution.totalToDebt+distribution.totalToInvestment;
   distribution.sources=[...(appliedSalary>0?['Salário']:[]),...(fgts>0?['FGTS']:[]),...(plrDebt>0||plrCash>0?['PLR']:[]),...(autoAmount>0||extraProgram>0?['Extra programado']:[]),...(requestedDebtPrograms>0?['Amortização programada']:[])];
-  const furnitureMonth=i-constructionMonths;const deferredPayment=furnitureMonth>=0&&furnitureMonth<8?(furnitureMonth===7?deferred-Math.round(deferred/8*100)/100*7:Math.round(deferred/8*100)/100):0;
   const contractorPayment=sum(c.schedule.filter(x=>month(x.month)===date).map(x=>x.payment));
-  const ownPayment=(i===0?extras-deferred:0)+deferredPayment;
+  const ownPayment=(i===0?(currentFunds?otherUpfront:extras-deferred):0)+deferredPayment;
   const appliedFgts=Math.min(fgts,extra);
   const ownContributions=appliedSalary+plrCash+extraProgram+autoCash+Math.max(0,extra-appliedFgts);
   const financingFlow=installment+appliedFgts,ownFlow=ownPayment+ownContributions;
   expenseTimeline.push({month:date,financing:financingFlow,contractor:contractorPayment,own:ownFlow,total:financingFlow+contractorPayment+ownFlow,furniture:deferredPayment,salary:appliedSalary,plr:plrCash+Math.min(plrDebt,Math.max(0,extra-appliedFgts)),fgts:appliedFgts,ownExpenses:ownPayment,ownContributions});
-  const finalReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+autoCash+manualIn-installment-manualOut-deferredPayment;
-  cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram+autoCash,H:installment,I:finalReserve,J:factor,manualIn,manualOut,deferredPayment});
+  const rawReserve=reserve+earnings+appliedSalary+plrCash+extraProgram+autoCash+manualIn-installment-manualOut-deferredPayment,unfunded=currentFunds?Math.max(0,-rawReserve):0,finalReserve=currentFunds?Math.max(0,rawReserve):rawReserve;
+  const paymentFromInvestment=Math.min(installment,Math.max(0,availableInvestment)),paymentFromSalary=Math.min(Math.max(0,installment-paymentFromInvestment),appliedSalary);
+  cash.push({A:date,B:m,C:reserve,D:net,E:earnings,F:appliedSalary,G:plrCash+extraProgram+autoCash,H:installment,I:finalReserve,J:factor,manualIn,manualOut,deferredPayment,unfunded,paymentFromInvestment,paymentFromSalary});
   debt=closing;reserve=finalReserve;
  }
  const paidIndex=sac.findIndex((x,i)=>i>=constructionMonths&&x.M===0),paidMonths=paidIndex<0?null:paidIndex+1;
@@ -92,7 +105,7 @@ function calculate(c,{expenses=null,programs=[],movements=[]}={}){
  [4,5,6,7,8,9,10,11,12].forEach((r,i)=>p['E'+r]=expenses===null?c.expenses[i].amount:(expenses.find(x=>x.id===c.expenses[i].id||x.name===c.expenses[i].name)?.planned??0));
  const annualBalanceMap=new Map();expenseTimeline.forEach((x,i)=>{const year=x.month.slice(0,4);if(!annualBalanceMap.has(year))annualBalanceMap.set(year,{year,investment:0,salary:0,plr:0,fgts:0,extras:0,caixaRelease:0,caixa:0,contractor:0,others:0});const y=annualBalanceMap.get(year),a=cash[i],s=sac[i];y.investment+=a.E;y.salary+=x.salary;y.plr+=x.plr;y.fgts+=x.fgts+sum(c.schedule.filter(z=>month(z.month)===x.month).map(z=>z.fgts));y.extras+=Math.max(0,x.ownContributions-x.salary-x.plr)+a.manualIn;y.caixaRelease+=s.release;y.caixa+=s.L+s.K;y.contractor+=x.contractor;y.others+=x.ownExpenses+a.manualOut;});const annualBalance=[...annualBalanceMap.values()].map(x=>({...x,sources:x.investment+x.salary+x.plr+x.fgts+x.extras+x.caixaRelease,destinations:x.caixa+x.contractor+x.others,net:x.investment+x.salary+x.plr+x.fgts+x.extras+x.caixaRelease-x.caixa-x.contractor-x.others}));
  const helperSchedule={B5:scheduleTotals.construction,B6:scheduleTotals.caixa,B7:scheduleTotals.fgts,B8:scheduleTotals.own,E5:physical,E6:paid,E7:scheduleTotals.construction-paid,E8:scheduleTotals.gap};
- return {constructionMonths,releases,deferred,expenseTimeline,annualBalance,parameters:p,premises:prem,sac,cash,allocation,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),...(constructionMonths?['Obra estimada em '+constructionMonths+' meses: liberações proporcionais ao cronograma, ajustadas ao principal; encargos variáveis, sem parcela fixa de R$1.500. TR paga nos encargos durante obra; sem amortização regular. Extras e amortizações programadas ficam investidos até a conclusão. MIP usa o saldo liberado como aproximação.']:[]),'TR corrige o saldo antes de juros, amortização e MIP. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
+ return {funding,constructionMonths,releases,deferred,expenseTimeline,annualBalance,parameters:p,premises:prem,sac,cash,allocation,schedule,scheduleTotals,extras,helperSac,helperCash,helperSchedule,payoff:paidIndex<0?null:sac[paidIndex].A,warnings:[...(scheduleTotals.construction!==c.construction?['Valores literais do cronograma divergem do contrato atualizado']:[]),...(scheduleTotals.fgts!==c.fgts?['FGTS do cronograma difere do cenário']:[]),...(scheduleTotals.gap!==0?['Cronograma: diferença de fontes '+scheduleTotals.gap]:[]),...(c.fgts!==c.premiseFgts?['FGTS diverge entre abas']:[]),...(constructionMonths?['Obra estimada em '+constructionMonths+' meses: liberações proporcionais ao cronograma, ajustadas ao principal; encargos variáveis, sem parcela fixa de R$1.500. TR paga nos encargos durante obra; sem amortização regular. Extras e amortizações programadas ficam investidos até a conclusão. MIP usa o saldo liberado como aproximação.']:[]),'TR corrige o saldo antes de juros, amortização e MIP. J (seguros/FGHAB) não integra a parcela L.','H9, H12 e H13 não alimentam as fórmulas mensais da origem.']};
 }
-root.MinhaObraEngine={calculate};if(typeof module!=='undefined')module.exports=root.MinhaObraEngine;
+root.MinhaObraEngine={calculate,allocateConstructorSources};if(typeof module!=='undefined')module.exports=root.MinhaObraEngine;
 })(typeof globalThis!=='undefined'?globalThis:this);
